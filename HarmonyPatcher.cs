@@ -73,11 +73,11 @@ namespace DateFormat
                     // this is instead of waiting for the game date to change due to the simulation running
                     Bindings bindings = ColossalFramework.UI.UIView.GetAView().GetComponent<Bindings>();
                     FieldInfo fiGameTime = typeof(Bindings).GetField("m_GameTime", BindingFlags.NonPublic | BindingFlags.Instance);
-                    FieldInfo fiValue = typeof(UIDateTimeWrapper).GetField("m_Value", BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (bindings != null && fiGameTime != null && fiValue != null)
+                    if (bindings != null && fiGameTime != null)
                     {
                         UIDateTimeWrapper gameTime = fiGameTime.GetValue(bindings) as UIDateTimeWrapper;
-                        if (gameTime != null)
+                        FieldInfo fiValue = typeof(UIDateTimeWrapper).GetField("m_Value", BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (gameTime != null && fiValue != null)
                         {
                             fiValue.SetValue(gameTime, DateTime.MaxValue);
                         }
@@ -98,6 +98,12 @@ namespace DateFormat
                     UpdateGameTimeExtendedInfoPanel2();
                 }
 
+                // patch Enhanced Outside Connections View mod
+                if (IsModEnabled(2368396560L))
+                {
+                    CreatePatchEnhancedOutsideConnectionsView();
+                }
+
                 // success
                 Patched = true;
                 return true;
@@ -109,8 +115,8 @@ namespace DateFormat
             }
         }
 
-        // the logic in the following 4 routines is intentionally separate from the CreatePatches routine because
-        // a reference to IINS.ExtendedInfo in CreatePatches would cause the CreatePatches routine to fail to execute at all when the mod is not present
+        // the logic in the following mod patch routines is intentionally separate from the CreatePatches routine because
+        // a reference to the patched type in CreatePatches would cause the CreatePatches routine to fail to execute at all when the mod is not present
 
         /// <summary>
         /// patch Extended InfoPanel mod and Extended InfoPanel 21:9 mod (both mods use the same IINS.ExtendedInfo namespace)
@@ -183,6 +189,22 @@ namespace DateFormat
                     // call the routine that was patched
                     instance.UpdateDate_1();
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// patch Enhanced Outside Connection View mod
+        /// </summary>
+        private static void CreatePatchEnhancedOutsideConnectionsView()
+        {
+            // don't allow an error here to prevent the rest of this mod from working
+            try
+            {
+                CreateTranspilerPatch(typeof(EnhancedOutsideConnectionsView.EOCVGraph), "OnTooltipHover", BindingFlags.NonPublic | BindingFlags.Instance);
             }
             catch (Exception ex)
             {

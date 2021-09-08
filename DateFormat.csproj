@@ -51,6 +51,10 @@
       <HintPath>..\..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\Cities_Skylines\Cities_Data\Managed\ColossalManaged.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="EnhancedOutsideConnectionsView">
+      <HintPath>.\EnhancedOutsideConnectionsView.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="ExtendedInfo2">
       <HintPath>.\ExtendedInfo2.dll</HintPath>
       <Private>False</Private>

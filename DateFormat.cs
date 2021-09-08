@@ -82,14 +82,14 @@ namespace DateFormat
             separator.builtinKeyNavigation = true;
 
             // month leading zero
-            UICheckBox monthLeadginZero = (UICheckBox)group.AddCheckbox("Leading zero on months less than 10", config.MonthLeadingZero, (bool isChecked) =>
+            UICheckBox monthLeadingZero = (UICheckBox)group.AddCheckbox("Leading zero on months less than 10", config.MonthLeadingZero, (bool isChecked) =>
             {
                 config.MonthLeadingZero = isChecked;
                 NewDateFormat(config, currentDate);
             });
 
             // day leading zero
-            UICheckBox dayLeadginZero = (UICheckBox)group.AddCheckbox("Leading zero on days less than 10", config.DayLeadingZero, (bool isChecked) =>
+            UICheckBox dayLeadingZero = (UICheckBox)group.AddCheckbox("Leading zero on days less than 10", config.DayLeadingZero, (bool isChecked) =>
             {
                 config.DayLeadingZero = isChecked;
                 NewDateFormat(config, currentDate);
@@ -128,8 +128,8 @@ namespace DateFormat
                 separator.selectedIndex = defaultSeparator;
 
                 // set default month and day leading zero
-                monthLeadginZero.isChecked = DateFormatConfiguration.DefaultMonthLeadingZero;
-                dayLeadginZero.isChecked = DateFormatConfiguration.DefaultDayLeadingZero;
+                monthLeadingZero.isChecked = DateFormatConfiguration.DefaultMonthLeadingZero;
+                dayLeadingZero.isChecked = DateFormatConfiguration.DefaultDayLeadingZero;
 
                 // now run new date format, even if nothing changed
                 _runNewDateFormat = true;
@@ -141,7 +141,7 @@ namespace DateFormat
         /// <summary>
         /// update things when the date format is changed
         /// </summary>
-        public void NewDateFormat(DateFormatConfiguration config, UITextField currentDate)
+        private void NewDateFormat(DateFormatConfiguration config, UITextField currentDate)
         {
             try
             {
