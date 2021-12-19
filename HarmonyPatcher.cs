@@ -104,6 +104,16 @@ namespace DateFormat
                     CreatePatchEnhancedOutsideConnectionsView();
                 }
 
+                // patch More City Statistics mod
+                if (IsModEnabled(2685974449L))
+                {
+                    CreatePatchMoreCityStatistics();
+                }
+
+                // the Real Time mod is not patched because the date formatting logic is in class RealTime.UI.DateTooltipBehavior (routine UpdateTooltip)
+                // the class is internal, which makes the class inaccessible to be patched by the Harmony Transpiler
+                // and I don't want to try to replace or duplicate the logic in UpdateTooltip using Harmony Prefix or Posfix patches
+
                 // success
                 Patched = true;
                 return true;
@@ -205,6 +215,51 @@ namespace DateFormat
             try
             {
                 CreateTranspilerPatch(typeof(EnhancedOutsideConnectionsView.EOCVGraph), "OnTooltipHover", BindingFlags.NonPublic | BindingFlags.Instance);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// patch More City Statistics mod
+        /// </summary>
+        private static void CreatePatchMoreCityStatistics()
+        {
+            // don't allow an error here to prevent the rest of this mod from working
+            try
+            {
+                // update the two places where dates are used
+                CreateTranspilerPatch(typeof(MoreCityStatistics.UIImprovedGraph), "OnTooltipHover",    BindingFlags.NonPublic | BindingFlags.Instance);
+                CreateTranspilerPatch(typeof(MoreCityStatistics.ShowRange      ), "UpdateSliderLabel", BindingFlags.NonPublic | BindingFlags.Instance);
+
+                // call routine to update slider labels:  MoreCityStatistics.ShowRange.instance.UpdateSliderLabels
+                PropertyInfo property = typeof(MoreCityStatistics.ShowRange).GetProperty("instance", BindingFlags.Static | BindingFlags.Public);
+                if (property == null)
+                {
+                    Debug.LogError("Unable to find MoreCityStatistics.ShowRange.instance property.");
+                }
+                else
+                {
+                    MoreCityStatistics.ShowRange instance = (MoreCityStatistics.ShowRange)property.GetValue(null, null);
+                    if (instance == null)
+                    {
+                        Debug.LogError("Unable to get value for MoreCityStatistics.ShowRange.instance.");
+                    }
+                    else
+                    {
+                        MethodInfo method = typeof(MoreCityStatistics.ShowRange).GetMethod("UpdateSliderLabels", BindingFlags.Instance | BindingFlags.NonPublic);
+                        if (method == null)
+                        {
+                            Debug.LogError("Unable to get MoreCityStatistics.ShowRange.UpdateSliderLabels method.");
+                        }
+                        else
+                        {
+                            method.Invoke(instance, null);
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {

@@ -45,7 +45,7 @@
             }
 
             // get year, month, and day formats
-            string yearFormat = "yyyy";
+            const string yearFormat = "yyyy";
             string monthFormat = (MonthLeadingZero ? "MM" : "M");
             string dayFormat = (DayLeadingZero ? "dd" : "d");
 

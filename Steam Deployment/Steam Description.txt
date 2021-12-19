@@ -22,12 +22,6 @@ The following dates are formatted:[list]
 This mod does not format the date/time displayed when loading or saving:  games, maps, themes, assets, and scenarios.
 
 [h1]Compatibility[/h1]
-This mod does not alter game save files in any way and can be safely disabled or unsubscribed at any time.
-
-This mod does not alter the game mechanics or the game date in any way.  This mod only changes how game dates are displayed.
-
-This mod has been tested only on Windows but should work on Mac and Linux.
-
 This mod is compatible with all DLC packages thru Sunset Harbor and all Content Creator Packs (CCP) thru Train Stations/Bridges & Piers.  This mod does not require any DLC or CCP to work properly.
 
 This mod is compatible with the following mods.  The main game date will be formatted when any of these mods are enabled.[list]
@@ -37,12 +31,19 @@ This mod is compatible with the following mods.  The main game date will be form
 
 This mod is compatible with the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2368396560]Enhanced Outside Connections View[/url] mod.  The tooltip date on the graph will be formatted.
 
+This mod is compatible with the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2685974449]More City Statistics[/url] mod.  The tooltip date on the graph and the slider dates (when Real Time mod is enabled) will be formatted.
+
 This mod is a replacement for and therefore is not compatible with the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=565071445]Date Reformatter[/url] mod.
+
+This mod does not alter game save files in any way and can be safely disabled or unsubscribed at any time.
+
+This mod does not alter the game mechanics or the game date in any way.  This mod only changes how game dates are displayed.
+
+This mod has been tested only on Windows but should work on Mac and Linux.
 
 [h1]Source Code[/h1]
 Available [url=https://github.com/rcav8tr/DateFormat]here[/url].
-
-See [url=https://steamcommunity.com/sharedfiles/filedetails/changelog/2554483179]Change Notes[/url] for the revision history.
+Change notes [url=https://steamcommunity.com/sharedfiles/filedetails/changelog/2554483179]here[/url].
 
 [h1]Acknowledgments[/h1]
 This mod depends on [url=https://github.com/pardeike]Andreas Pardeike's[/url] [url=https://github.com/pardeike/Harmony]Harmony 2 Patching Library[/url] provided as a mod by [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2040656402]boformer[/url].
