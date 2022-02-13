@@ -96,8 +96,8 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Steam Deployment\Examples.jpg" />
-    <Content Include="Steam Deployment\Steam Description.txt" />
+    <None Include="Steam Deployment\Examples.jpg" />
+    <None Include="Steam Deployment\Steam Description.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
