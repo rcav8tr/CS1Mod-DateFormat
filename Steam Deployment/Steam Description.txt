@@ -1,5 +1,7 @@
 Specify the format for dates in the game.
 
+[img=https://i.imgur.com/f2iRAPU.gif]
+
 [h1]Detailed Description[/h1]
 The following date formatting items can be specified:[list]
 [*]Date part order can be DMY, MDY, or YMD.
@@ -22,7 +24,7 @@ The following dates are formatted:[list]
 This mod does not format the date/time displayed when loading or saving:  games, maps, themes, assets, and scenarios.
 
 [h1]Compatibility[/h1]
-This mod is compatible with all DLC packages thru Sunset Harbor and all Content Creator Packs (CCP) thru Train Stations/Bridges & Piers.  This mod does not require any DLC or CCP to work properly.
+This mod is compatible with all Down Loadable Content (DLC) packages thru Airports and all Content Creator Packs (CCP) thru Map Pack and Vehicles of the World.  This mod does not require any DLC or CCP to work properly.
 
 This mod is compatible with the following mods.  The main game date will be formatted when any of these mods are enabled.[list]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=781767563]Extended InfoPanel[/url]
