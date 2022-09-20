@@ -1,6 +1,6 @@
 Specify the format for dates in the game.
 
-[img=https://i.imgur.com/f2iRAPU.gif]
+[img=https://i.imgur.com/ys8eGPj.png]
 
 [h1]Detailed Description[/h1]
 The following date formatting items can be specified:[list]
@@ -15,7 +15,7 @@ Click Reset To Default to reset all settings to their default values.  The defau
 The date format can be changed while a game is in progress.  The new date format will be applied immediately.
 
 The following dates are formatted:[list]
-[*]Main game date
+[*]Game, Map Editor, Theme Editor - main game date
 [*]ChirpX Launch Site - past launch dates
 [*]Festival Area - concert dates
 [*]Football Stadium - next and past match dates
@@ -24,8 +24,6 @@ The following dates are formatted:[list]
 This mod does not format the date/time displayed when loading or saving:  games, maps, themes, assets, and scenarios.
 
 [h1]Compatibility[/h1]
-This mod is compatible with all Down Loadable Content (DLC) packages thru Airports and all Content Creator Packs (CCP) thru Map Pack and Vehicles of the World.  This mod does not require any DLC or CCP to work properly.
-
 This mod is compatible with the following mods.  The main game date will be formatted when any of these mods are enabled.[list]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=781767563]Extended InfoPanel[/url]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2498761388]Extended InfoPanel 2[/url]

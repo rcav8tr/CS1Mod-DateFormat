@@ -17,8 +17,14 @@ namespace DateFormat
 
             try
             {
-                // check for new or loaded game
-                if (mode == LoadMode.NewGame || mode == LoadMode.NewGameFromScenario || mode == LoadMode.LoadGame)
+                // check for new/loaded game, map editor, or theme editor
+                if (mode == LoadMode.NewGame             ||
+                    mode == LoadMode.NewGameFromScenario ||
+                    mode == LoadMode.LoadGame            ||
+                    mode == LoadMode.NewMap              ||
+                    mode == LoadMode.LoadMap             ||
+                    mode == LoadMode.NewTheme            ||
+                    mode == LoadMode.LoadTheme           )
                 {
                     // if Date Reformatter mod is enabled, display message and return
                     if (HarmonyPatcher.IsModEnabled(565071445L))

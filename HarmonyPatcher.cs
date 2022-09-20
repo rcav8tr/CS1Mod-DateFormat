@@ -365,13 +365,13 @@ namespace DateFormat
         /// </summary>
         public static bool IsModEnabled(ulong modID)
         {
-            // determine if Date Reformatter mod is enabled
+            // do each mod
             foreach (PluginManager.PluginInfo mod in PluginManager.instance.GetPluginsInfo())
             {
                 // ignore builtin mods and camera script
                 if (!mod.isBuiltin && !mod.isCameraScript)
                 {
-                    // check against the Date REformatter workshop ID
+                    // check if this is the specified mod
                     if (mod.publishedFileID.AsUInt64 == modID)
                     {
                         // found the mod, return enabled status
