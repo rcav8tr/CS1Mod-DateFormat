@@ -1,20 +1,18 @@
-﻿extern alias ExtendedInfoPanel1;
-extern alias ExtendedInfoPanel2;
-
-using UnityEngine;
+﻿using UnityEngine;
 using CitiesHarmony.API;
 using HarmonyLib;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
 using ColossalFramework.Plugins;
+using ColossalFramework.UI;
 
 namespace DateFormat
 {
     /// <summary>
     /// Harmony patching
     /// </summary>
-    internal class HarmonyPatcher
+    internal static class HarmonyPatcher
     {
         // Harmony ID unique to this mod
         private const string HarmonyId = "com.github.rcav8tr.DateFormat";
@@ -25,7 +23,7 @@ namespace DateFormat
         /// <summary>
         /// create Harmony patches
         /// </summary>
-        public static bool CreatePatches()
+        public static void CreatePatches()
         {
             try
             {
@@ -35,268 +33,266 @@ namespace DateFormat
                 // check Harmony
                 if (!HarmonyHelper.IsHarmonyInstalled)
                 {
-                    ColossalFramework.UI.UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel").SetMessage("Missing Dependency",
+                    UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel").SetMessage("Missing Dependency",
                         "The Date Format mod requires the 'Harmony (Mod Dependency)' mod.  " + Environment.NewLine + Environment.NewLine +
                         "Please subscribe to the 'Harmony (Mod Dependency)' mod and restart the game.", error: false);
-                    return false;
+                    return;
                 }
 
-                // patch each routine that has a hard-coded date format
-                if (!CreateTranspilerPatch(typeof(UIDateTimeWrapper      ), "Check",                 BindingFlags.Public    | BindingFlags.Instance)) return false;   // main game date
-                if (!CreateTranspilerPatch(typeof(ChirpXPanel            ), "UpdateBindings",        BindingFlags.NonPublic | BindingFlags.Instance)) return false;
-                if (!CreateTranspilerPatch(typeof(FestivalPanel          ), "RefreshCurrentConcert", BindingFlags.NonPublic | BindingFlags.Instance)) return false;
-                if (!CreateTranspilerPatch(typeof(FestivalPanel          ), "RefreshFutureConcert",  BindingFlags.NonPublic | BindingFlags.Instance)) return false;
-                if (!CreateTranspilerPatch(typeof(FootballPanel          ), "RefreshMatchInfo",      BindingFlags.NonPublic | BindingFlags.Instance)) return false;
-                if (!CreateTranspilerPatch(typeof(VarsitySportsArenaPanel), "RefreshPastMatches",    BindingFlags.NonPublic | BindingFlags.Instance)) return false;
-                if (!CreateTranspilerPatch(typeof(VarsitySportsArenaPanel), "RefreshNextMatchDates", BindingFlags.NonPublic | BindingFlags.Instance)) return false;
+                // patch each method from the game that has a hard-coded date format
+                CreateTranspilerPatch(typeof(UIDateTimeWrapper      ),"Check",                 BindingFlags.Public    | BindingFlags.Instance, out MethodInfo _);    // main game date
+                CreateTranspilerPatch(typeof(ChirpXPanel            ),"UpdateBindings",        BindingFlags.NonPublic | BindingFlags.Instance, out MethodInfo _);
+                CreateTranspilerPatch(typeof(FestivalPanel          ),"RefreshCurrentConcert", BindingFlags.NonPublic | BindingFlags.Instance, out MethodInfo _);
+                CreateTranspilerPatch(typeof(FestivalPanel          ),"RefreshFutureConcert",  BindingFlags.NonPublic | BindingFlags.Instance, out MethodInfo _);
+                CreateTranspilerPatch(typeof(FootballPanel          ),"RefreshMatchInfo",      BindingFlags.NonPublic | BindingFlags.Instance, out MethodInfo _);
+                CreateTranspilerPatch(typeof(VarsitySportsArenaPanel),"RefreshPastMatches",    BindingFlags.NonPublic | BindingFlags.Instance, out MethodInfo _);
+                CreateTranspilerPatch(typeof(VarsitySportsArenaPanel),"RefreshNextMatchDates", BindingFlags.NonPublic | BindingFlags.Instance, out MethodInfo _);
 
-                // check which Extended InfoPanel mod version is enabled, if any
-                bool extendedInfoPanelMod1   = IsModEnabled(781767563L );       // original version, has by far the most subscribers of the 3 versions
-                bool extendedInfoPanelMod219 = IsModEnabled(2274354659L);       // 21:9 version of original
-                bool extendedInfoPanelMod2   = IsModEnabled(2498761388L);       // updated version of original
+                // patch Extended InfoPanel mod; original version that has by far the most subsribers
+                bool patchedExtendedInfoPanel1 = CreateTranspilerPatchForMod(
+                    781767563UL,
+                    "IINS.ExtendedInfo",
+                    "IINS.ExtendedInfo",
+                    "CityInfoDatas",
+                    "UpdateDate_1",
+                    BindingFlags.Public | BindingFlags.Instance,
+                    out PluginManager.PluginInfo modExtendedInfoPanel1,
+                    out Type originalTypeExtendedInfoPanel1,
+                    out MethodInfo originalMethodExtendedInfoPanel1);
 
-                // if Extended InfoPanel mod is enabled, then patch it
-                if (extendedInfoPanelMod1 || extendedInfoPanelMod219)
-                {
-                    CreatePatchExtendedInfoPanel1();
-                }
-                if (extendedInfoPanelMod2)
-                {
-                    CreatePatchExtendedInfoPanel2();
-                }
+                // patch Extended InfoPanel 21:9 mod; has exactly the same signature as the original version above, just a different Steam ID
+                bool patchedExtendedInfoPanel219 = CreateTranspilerPatchForMod(
+                    2274354659UL,
+                    "IINS.ExtendedInfo",
+                    "IINS.ExtendedInfo",
+                    "CityInfoDatas",
+                    "UpdateDate_1",
+                    BindingFlags.Public | BindingFlags.Instance,
+                    out PluginManager.PluginInfo modExtendedInfoPanel219,
+                    out Type originalTypeExtendedInfoPanel219,
+                    out MethodInfo originalMethodExtendedInfoPanel219);
 
-                // don't allow an error to prevent the rest of the logic from running
-                try
-                {
-                    // in Bindings, set game time value field to max date time so that next time UIDateTimeWrapper.Check is called
-                    // the main game date will be different than the value and the game date will be updated immediately even if the simulation is paused
-                    // this is instead of waiting for the game date to change due to the simulation running
-                    Bindings bindings = ColossalFramework.UI.UIView.GetAView().GetComponent<Bindings>();
-                    FieldInfo fiGameTime = typeof(Bindings).GetField("m_GameTime", BindingFlags.NonPublic | BindingFlags.Instance);
-                    if (bindings != null && fiGameTime != null)
-                    {
-                        UIDateTimeWrapper gameTime = fiGameTime.GetValue(bindings) as UIDateTimeWrapper;
-                        FieldInfo fiValue = typeof(UIDateTimeWrapper).GetField("m_Value", BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (gameTime != null && fiValue != null)
-                        {
-                            fiValue.SetValue(gameTime, DateTime.MaxValue);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogException(ex);
-                }
-
-                // if Extended InfoPanel mod is enabled, then update game time
-                if (extendedInfoPanelMod1 || extendedInfoPanelMod219)
-                {
-                    UpdateGameTimeExtendedInfoPanel1();
-                }
-                if (extendedInfoPanelMod2)
-                {
-                    UpdateGameTimeExtendedInfoPanel2();
-                }
+                // patch Extended InfoPanel 2 mod; has a different assembly name than the versions above
+                bool patchedExtendedInfoPanel2 = CreateTranspilerPatchForMod(
+                    2498761388UL,
+                    "ExtendedInfo2",
+                    "IINS.ExtendedInfo",
+                    "CityInfoDatas",
+                    "UpdateDate_1",
+                    BindingFlags.Public | BindingFlags.Instance,
+                    out PluginManager.PluginInfo modExtendedInfoPanel2,
+                    out Type originalTypeExtendedInfoPanel2,
+                    out MethodInfo originalMethodExtendedInfoPanel2);
 
                 // patch Enhanced Outside Connections View mod
-                if (IsModEnabled(2368396560L))
-                {
-                    CreatePatchEnhancedOutsideConnectionsView();
-                }
+                bool patchedEnhancedOutsideConnectionView = CreateTranspilerPatchForMod(
+                    2368396560UL,
+                    "EnhancedOutsideConnectionsView",
+                    "EnhancedOutsideConnectionsView",
+                    "EOCVGraph",
+                    "OnTooltipHover",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    out PluginManager.PluginInfo _,
+                    out Type _,
+                    out MethodInfo _);
 
-                // patch More City Statistics mod
-                if (IsModEnabled(2685974449L))
-                {
-                    CreatePatchMoreCityStatistics();
-                }
+                // patch More City Statistics mod; 2 patches
+                bool patchedMoreCityStatistics1 = CreateTranspilerPatchForMod(
+                    2685974449UL,
+                    "MoreCityStatistics",
+                    "MoreCityStatistics",
+                    "UIImprovedGraph",
+                    "OnTooltipHover",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    out PluginManager.PluginInfo _,
+                    out Type _,
+                    out MethodInfo _);
+                bool patchedMoreCityStatistics2 = CreateTranspilerPatchForMod(
+                    2685974449UL,
+                    "MoreCityStatistics",
+                    "MoreCityStatistics",
+                    "ShowRange",
+                    "UpdateSliderLabel",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    out PluginManager.PluginInfo _,
+                    out Type originalTypeMoreCityStatistics2,
+                    out MethodInfo _);
 
-                // the Real Time mod is not patched because the date formatting logic is in class RealTime.UI.DateTooltipBehavior (routine UpdateTooltip)
-                // the class is internal, which makes the class inaccessible to be patched by the Harmony Transpiler
-                // and I don't want to try to replace or duplicate the logic in UpdateTooltip using Harmony Prefix or Posfix patches
+                // patch Real Time mod
+                bool patchedRealTime = CreateTranspilerPatchForMod(
+                    1420955187UL,
+                    "RealTime",
+                    "RealTime.UI",
+                    "DateTooltipBehavior",
+                    "UpdateTooltip",
+                    BindingFlags.NonPublic | BindingFlags.Instance,
+                    out PluginManager.PluginInfo modRealTime,
+                    out Type originalTypeRealTime,
+                    out MethodInfo originalMethodRealTime);
+
+                // always refresh main game date
+                RefreshMainGameDate();
+
+                // refresh dates for patched mods that need it
+                if (patchedExtendedInfoPanel1  ) { RefreshDateExtendedInfoPanel(modExtendedInfoPanel1,   originalTypeExtendedInfoPanel1,   originalMethodExtendedInfoPanel1  ); }
+                if (patchedExtendedInfoPanel219) { RefreshDateExtendedInfoPanel(modExtendedInfoPanel219, originalTypeExtendedInfoPanel219, originalMethodExtendedInfoPanel219); }
+                if (patchedExtendedInfoPanel2  ) { RefreshDateExtendedInfoPanel(modExtendedInfoPanel2,   originalTypeExtendedInfoPanel2,   originalMethodExtendedInfoPanel2  ); }
+                if (patchedMoreCityStatistics2 ) { RefreshDateMoreCityStatistics(originalTypeMoreCityStatistics2); }
+                if (patchedRealTime            ) { RefreshDateRealTime(modRealTime, originalTypeRealTime, originalMethodRealTime); }
 
                 // success
                 Patched = true;
+            }
+            catch (Exception ex)
+            {
+                LogUtil.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// create a transpiler patch based on type and method name
+        /// </summary>
+        private static bool CreateTranspilerPatch(Type originalType, string originalMethodName, BindingFlags bindingFlags, out MethodInfo originalMethod)
+        {
+            // initialize return value
+            originalMethod = null;
+
+            // validate original type
+            if (originalType == null)
+            {
+                LogUtil.LogError($"Error patching method [{originalMethodName}].  Original type is null.");
+                return false;
+            }
+
+            // build full name of method to be patched
+            string fullMethodName = "[" + originalType.Assembly.GetName().Name + "." + originalType.FullName + "." + originalMethodName + "]";
+
+            // don't allow an error here to prevent the rest of this mod from working
+            try
+            {
+                // get the original method
+                originalMethod = originalType.GetMethod(originalMethodName, bindingFlags);
+                if (originalMethod == null)
+                {
+                    LogUtil.LogError($"Error patching {fullMethodName}.  Unable to find original method.");
+                    return false;
+                }
+
+                // get the transpiler method
+                MethodInfo transpilerMethod = typeof(HarmonyPatcher).GetMethod(nameof(ReplaceDateFormatString), BindingFlags.Static | BindingFlags.NonPublic);
+                if (transpilerMethod == null)
+                {
+                    LogUtil.LogError($"Error patching {fullMethodName}.  Unable to find patch transpiler method HarmonyPatcher.ReplaceDateFormatString.");
+                    return false;
+                }
+
+                // patch the original method using the tranpiler patch method
+                new Harmony(HarmonyId).Patch(originalMethod, null, null, new HarmonyMethod(transpilerMethod));
+                LogUtil.LogInfo($"Patched: {fullMethodName}.");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                LogUtil.LogError($"Exception patching {fullMethodName}.");
+                LogUtil.LogException(ex);
                 return false;
             }
         }
 
-        // the logic in the following mod patch routines is intentionally separate from the CreatePatches routine because
-        // a reference to the patched type in CreatePatches would cause the CreatePatches routine to fail to execute at all when the mod is not present
-
         /// <summary>
-        /// patch Extended InfoPanel mod and Extended InfoPanel 21:9 mod (both mods use the same IINS.ExtendedInfo namespace)
+        /// create a transpiler patch for a mod based on modID, assembly name, namespace name, type name, and method name
         /// </summary>
-        private static void CreatePatchExtendedInfoPanel1()
+        private static bool CreateTranspilerPatchForMod(
+            ulong modID,
+            string assemblyName,
+            string namespaceName,
+            string typeName,
+            string originalMethodName,
+            BindingFlags bindingFlags,
+            out PluginManager.PluginInfo mod,
+            out Type originalType,
+            out MethodInfo originalMethod)
         {
+            // set default return values
+            mod = null;
+            originalType = null;
+            originalMethod = null;
+
+            // build full name of method to be patched
+            string fullMethodName = "[" + assemblyName + "." + namespaceName + "." + typeName + "." + originalMethodName + "]";
+
             // don't allow an error here to prevent the rest of this mod from working
             try
             {
-                CreateTranspilerPatch(typeof(ExtendedInfoPanel1.IINS.ExtendedInfo.CityInfoDatas), "UpdateDate_1", BindingFlags.Public | BindingFlags.Instance);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-        }
-
-        /// <summary>
-        /// patch Extended InfoPanel 2 mod (uses a different namespace than the other 2 mods)
-        /// </summary>
-        private static void CreatePatchExtendedInfoPanel2()
-        {
-            // don't allow an error here to prevent the rest of this mod from working
-            try
-            {
-                CreateTranspilerPatch(typeof(ExtendedInfoPanel2.IINS.ExtendedInfo.CityInfoDatas), "UpdateDate_1", BindingFlags.Public | BindingFlags.Instance);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-        }
-
-        /// <summary>
-        /// update game time displayed on the Extended InfoPanel mod and Extended InfoPanel 21:9 mod
-        /// </summary>
-        private static void UpdateGameTimeExtendedInfoPanel1()
-        {
-            // don't allow an error here to prevent the rest of this mod from working
-            try
-            {
-                // it is necessary to use FindObjectOfType because using the Singleton<T> syntax causes a run time error when the mod is not present
-                ExtendedInfoPanel1.IINS.ExtendedInfo.CityInfoDatas instance =
-                    (ExtendedInfoPanel1.IINS.ExtendedInfo.CityInfoDatas)UnityEngine.Object.FindObjectOfType(typeof(ExtendedInfoPanel1.IINS.ExtendedInfo.CityInfoDatas));
-                if (instance != null)
+                // mod must be subscribed
+                mod = GetMod(modID);
+                if (mod == null)
                 {
-                    // call the routine that was patched
-                    instance.UpdateDate_1();
+                    // this is not an error, just log an info message
+                    LogUtil.LogInfo($"Mod [{modID}] is not subscribed.  Therefore {fullMethodName} is not patched.");
+                    return false;
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-        }
 
-        /// <summary>
-        /// update game time displayed on the Extended InfoPanel 2 mod
-        /// </summary>
-        private static void UpdateGameTimeExtendedInfoPanel2()
-        {
-            // don't allow an error here to prevent the rest of this mod from working
-            try
-            {
-                // it is necessary to use FindObjectOfType because using the Singleton<T> syntax causes a run time error when the mod is not present
-                ExtendedInfoPanel2.IINS.ExtendedInfo.CityInfoDatas instance =
-                    (ExtendedInfoPanel2.IINS.ExtendedInfo.CityInfoDatas)UnityEngine.Object.FindObjectOfType(typeof(ExtendedInfoPanel2.IINS.ExtendedInfo.CityInfoDatas));
-                if (instance != null)
+                // mod must be enabled
+                if (!mod.isEnabled)
                 {
-                    // call the routine that was patched
-                    instance.UpdateDate_1();
+                    // this is not an error, just log an info message
+                    LogUtil.LogInfo($"Mod [{modID}] is not enabled.  Therefore {fullMethodName} is not patched.");
+                    return false;
                 }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-        }
 
-        /// <summary>
-        /// patch Enhanced Outside Connection View mod
-        /// </summary>
-        private static void CreatePatchEnhancedOutsideConnectionsView()
-        {
-            // don't allow an error here to prevent the rest of this mod from working
-            try
-            {
-                CreateTranspilerPatch(typeof(EnhancedOutsideConnectionsView.EOCVGraph), "OnTooltipHover", BindingFlags.NonPublic | BindingFlags.Instance);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-            }
-        }
-
-        /// <summary>
-        /// patch More City Statistics mod
-        /// </summary>
-        private static void CreatePatchMoreCityStatistics()
-        {
-            // don't allow an error here to prevent the rest of this mod from working
-            try
-            {
-                // update the two places where dates are used
-                CreateTranspilerPatch(typeof(MoreCityStatistics.UIImprovedGraph), "OnTooltipHover",    BindingFlags.NonPublic | BindingFlags.Instance);
-                CreateTranspilerPatch(typeof(MoreCityStatistics.ShowRange      ), "UpdateSliderLabel", BindingFlags.NonPublic | BindingFlags.Instance);
-
-                // call routine to update slider labels:  MoreCityStatistics.ShowRange.instance.UpdateSliderLabels
-                PropertyInfo property = typeof(MoreCityStatistics.ShowRange).GetProperty("instance", BindingFlags.Static | BindingFlags.Public);
-                if (property == null)
+                // mod must have the named assembly
+                Assembly originalAssembly = null;
+                foreach (Assembly assembly in mod.GetAssemblies())
                 {
-                    Debug.LogError("Unable to find MoreCityStatistics.ShowRange.instance property.");
-                }
-                else
-                {
-                    MoreCityStatistics.ShowRange instance = (MoreCityStatistics.ShowRange)property.GetValue(null, null);
-                    if (instance == null)
+                    if (assembly.GetName().Name == assemblyName)
                     {
-                        Debug.LogError("Unable to get value for MoreCityStatistics.ShowRange.instance.");
+                        // found it
+                        originalAssembly = assembly;
+                        break;
                     }
-                    else
+                }
+                if (originalAssembly == null)
+                {
+                    LogUtil.LogError($"Error patching mod [{modID}] for {fullMethodName}.  Mod does not contain assembly.");
+                    return false;
+                }
+
+                // assembly must have the named namespace and named type
+                bool foundNamespace = false;
+                foreach (Type type in originalAssembly.GetTypes())
+                {
+                    if (type.Namespace == namespaceName)
                     {
-                        MethodInfo method = typeof(MoreCityStatistics.ShowRange).GetMethod("UpdateSliderLabels", BindingFlags.Instance | BindingFlags.NonPublic);
-                        if (method == null)
+                        foundNamespace = true;
+                        if (type.Name == typeName)
                         {
-                            Debug.LogError("Unable to get MoreCityStatistics.ShowRange.UpdateSliderLabels method.");
-                        }
-                        else
-                        {
-                            method.Invoke(instance, null);
+                            // found it
+                            originalType = type;
+                            break;
                         }
                     }
                 }
+                if (!foundNamespace)
+                {
+                    LogUtil.LogError($"Error patching mod [{modID}] for {fullMethodName}.  Assembly does not contain namespace.");
+                    return false;
+                }
+                if (originalType == null)
+                {
+                    LogUtil.LogError($"Error patching mod [{modID}] for {fullMethodName}.  Namespace does not contain type.");
+                    return false;
+                }
+
+                // got the original type, patch the method
+                return CreateTranspilerPatch(originalType, originalMethodName, bindingFlags, out originalMethod);
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
-            }
-        }
-
-        /// <summary>
-        /// create a transpiler patch
-        /// </summary>
-        /// <param name="originalType">type that contains the method to be patched</param>
-        /// <param name="originalMethodName">name of the method to be patched</param>
-        /// <param name="bindingFlags">binding flags of the method to be patched</param>
-        /// <returns>success status</returns>
-        private static bool CreateTranspilerPatch(Type originalType, string originalMethodName, BindingFlags bindingFlags)
-        {
-            // get the original method
-            MethodInfo originalMethod = originalType.GetMethod(originalMethodName, bindingFlags);
-            if (originalMethod == null)
-            {
-                Debug.LogError($"Unable to find original method {originalType.Name}.{originalMethodName}.");
+                LogUtil.LogError($"Exception patching mod [{modID}] for {fullMethodName}.");
+                LogUtil.LogException(ex);
                 return false;
             }
-
-            // get the transpiler method
-            MethodInfo transpilerMethod = typeof(HarmonyPatcher).GetMethod("ReplaceDateFormatString", BindingFlags.Static | BindingFlags.NonPublic);
-            if (transpilerMethod == null)
-            {
-                Debug.LogError($"Unable to find patch transpiler method HarmonyPatcher.ReplaceDateFormatString.");
-                return false;
-            }
-
-            // create the patch
-            new Harmony(HarmonyId).Patch(originalMethod, null, null, new HarmonyMethod(transpilerMethod));
-
-            // success
-            return true;
         }
 
         /// <summary>
@@ -308,24 +304,267 @@ namespace DateFormat
             DateFormatConfiguration config = Configuration<DateFormatConfiguration>.Load();
             string dateFormat = config.BuildDateFormatString();
 
-            // copy instructions to new code
-            List<CodeInstruction> code = new List<CodeInstruction>(instructions);
+            // copy instructions to new instructions
+            List<CodeInstruction> newInstructions = new List<CodeInstruction>(instructions);
 
-            // find and replace all occurrences of "dd/MM/yyyy" and "yyyy-MM-dd" with the configured date format
-            for (int i = 0; i < code.Count - 1; i++)
+            // find and replace all occurrences of "dd/MM/yyyy", "yyyy-MM-dd", and "d" with the configured date format
+            foreach (CodeInstruction instruction in newInstructions)
             {
-                if (code[i].opcode == System.Reflection.Emit.OpCodes.Ldstr)
+                if (instruction.opcode == System.Reflection.Emit.OpCodes.Ldstr)
                 {
-                    string operand = (string)code[i].operand;
-                    if (operand == "dd/MM/yyyy" || operand == "yyyy-MM-dd")
+                    string operand = (string)instruction.operand;
+                    if (operand == "dd/MM/yyyy" || operand == "yyyy-MM-dd" || operand == "d")
                     {
-                        code[i].operand = dateFormat;
+                        instruction.operand = dateFormat;
                     }
                 }
             }
 
-            // return the updated code
-            return code;
+            // return the updated instructions
+            return newInstructions;
+        }
+
+        /// <summary>
+        /// refresh main game date display
+        /// </summary>
+        private static void RefreshMainGameDate()
+        {
+            // don't allow an error here to prevent the rest of this mod from working
+            try
+            {
+                // in Bindings, set saved game time value field to max date/time so that next time UIDateTimeWrapper.Check is called
+                // the main game date will be different than the saved value and the game date will be updated immediately even if the simulation is paused
+                // this is instead of waiting for the game date to change due to the simulation running
+
+                // get Bindings component
+                Bindings bindings = UIView.GetAView().GetComponent<Bindings>();
+                if (bindings == null)
+                {
+                    LogUtil.LogError("Error refreshing main game date.  Unable to get Bindings component.");
+                    return;
+                }
+
+                // get Bindings.m_GameTime property
+                FieldInfo fiGameTime = typeof(Bindings).GetField("m_GameTime", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (fiGameTime == null)
+                {
+                    LogUtil.LogError("Error refreshing main game date.  Unable to get Bindings.m_GameTime property.");
+                    return;
+                }
+
+                // get Bindings.m_GameTime value, which is a UIDateTimeWrapper
+                UIDateTimeWrapper gameTime = fiGameTime.GetValue(bindings) as UIDateTimeWrapper;
+                if (gameTime == null)
+                {
+                    LogUtil.LogError("Error refreshing main game date.  Unable to get Bindings.m_GameTime value.");
+                    return;
+                }
+
+                // get UIDateTimeWrapper.m_Value field
+                FieldInfo fiValue = typeof(UIDateTimeWrapper).GetField("m_Value", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (fiValue == null)
+                {
+                    LogUtil.LogError("Error refreshing main game date.  Unable to get UIDateTimeWrapper.m_Value field.");
+                    return;
+                }
+
+                // set Bindings.m_GameTime.m_Value to the max date/time
+                fiValue.SetValue(gameTime, DateTime.MaxValue);
+                LogUtil.LogInfo("Refreshed main game date.");
+            }
+            catch (Exception ex)
+            {
+                LogUtil.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// refresh game date displayed by the Extended Info Panel mods
+        /// </summary>
+        private static void RefreshDateExtendedInfoPanel(PluginManager.PluginInfo mod, Type originalType, MethodInfo originalMethod)
+        {
+            // don't allow an error here to prevent the rest of this mod from working
+            try
+            {
+                // find original object
+                UnityEngine.Object originalObject = UnityEngine.Object.FindObjectOfType(originalType);
+                if (originalObject == null)
+                {
+                    LogUtil.LogError($"Error refreshing date for [{mod.name}] mod.  Unable to find object.");
+                    return;
+                }
+
+                // call the original method on the original object
+                originalMethod.Invoke(originalObject, null);
+                LogUtil.LogInfo($"Refreshed date for [{mod.publishedFileID}] [{originalType.Assembly.GetName().Name}] mod.");
+            }
+            catch (Exception ex)
+            {
+                LogUtil.LogException(ex);
+            }
+        }
+
+        /// <summary>
+        /// refresh date on sliders on More City Statistics mod graph
+        /// </summary>
+        private static void RefreshDateMoreCityStatistics(Type originalType)
+        {
+            // don't allow an error here to prevent the rest of this mod from working
+            try
+            {
+                // call MoreCityStatistics.ShowRange.instance.UpdateSliderLabels to update slider labels
+                // this method updates both slider labels and is a different method than the method that was patched
+
+                // get MoreCityStatistics.ShowRange.instance property
+                PropertyInfo property = originalType.GetProperty("instance", BindingFlags.Static | BindingFlags.Public);
+                if (property == null)
+                {
+                    LogUtil.LogError("Error refreshing date for MoreCityStatistics mod.  Unable to get MoreCityStatistics.ShowRange.instance property.");
+                    return;
+                }
+
+                // get MoreCityStatistics.ShowRange.instance value
+                object instance = property.GetValue(null, null);
+                if (instance == null)
+                {
+                    LogUtil.LogError("Error refreshing date for MoreCityStatistics mod.  Unable to get MoreCityStatistics.ShowRange.instance value.");
+                    return;
+                }
+
+                // get MoreCityStatistics.ShowRange.UpdateSliderLabels method
+                MethodInfo method = originalType.GetMethod("UpdateSliderLabels", BindingFlags.Instance | BindingFlags.NonPublic);
+                if (method == null)
+                {
+                    LogUtil.LogError("Error refreshing date for MoreCityStatistics mod.  Unable to get MoreCityStatistics.ShowRange.UpdateSliderLabels method.");
+                    return;
+                }
+
+                // call the method on the instance
+                method.Invoke(instance, null);
+                LogUtil.LogInfo("Refreshed date for MoreCityStatistics mod.");
+            }
+            catch (Exception ex)
+            {
+                LogUtil.LogException(ex);
+            }
+        }
+        /// <summary>
+        /// refresh game date displayed by RealTime mod
+        /// </summary>
+        private static void RefreshDateRealTime(PluginManager.PluginInfo mod, Type originalType, MethodInfo originalMethod)
+        {
+            // don't allow an error here to prevent the rest of this mod from working
+            try
+            {
+                // find the game's InfoPanel
+                UIPanel infoPanel = UIView.Find<UIPanel>("InfoPanel");
+                if (infoPanel == null)
+                {
+                    LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to find InfoPanel.");
+                    return;
+                }
+
+                // find PanelTime on InfoPanel
+                UIPanel panelTime = infoPanel.Find<UIPanel>("PanelTime");
+                if (panelTime == null)
+                {
+                    LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to find PanelTime.");
+                    return;
+                }
+
+                // find Sprite on PanelTime
+                UISprite sprite = panelTime.Find<UISprite>("Sprite");
+                if (sprite == null)
+                {
+                    LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to find Sprite.");
+                    return;
+                }
+
+                // get the DateTooltipBehavior attached to the progress sprite
+                Component spriteDateTooltipBehavior = sprite.gameObject.GetComponent(originalType);
+                if (spriteDateTooltipBehavior == null)
+                {
+                    // when a game is first started, Date Format might initialize before Real Time
+                    // so DateTooltipBehavior will not be attached yet (i.e. component will not be found)
+
+                    // get the Real Time assembly
+                    Assembly assemblyRealTime = null;
+                    foreach (Assembly assembly in mod.GetAssemblies())
+                    {
+                        if (assembly.GetName().Name == "RealTime")
+                        {
+                            assemblyRealTime = assembly;
+                            break;
+                        }
+                    }
+                    if (assemblyRealTime == null)
+                    {
+                        LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to get RealTime assembly.");
+                        return;
+                    }
+
+                    // get RealTime.Core.RealTimeMod class from the assembly
+                    Type mainType = null;
+                    foreach (Type type in assemblyRealTime.GetTypes())
+                    {
+                        if (type.Namespace == "RealTime.Core" && type.Name == "RealTimeMod")
+                        {
+                            // found it
+                            mainType = type;
+                            break;
+                        }
+                    }
+                    if (mainType == null)
+                    {
+                        LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to get RealTime.Core.RealTimeMod type.");
+                        return;
+                    }
+
+                    // get the "core" field
+                    FieldInfo fieldCore = mainType.GetField("core", BindingFlags.Instance | BindingFlags.NonPublic);
+                    if (fieldCore == null)
+                    {
+                        LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to get core field.");
+                        return;
+                    }
+
+                    // get RealTime instance
+                    ICities.IUserMod[] instances = mod.GetInstances<ICities.IUserMod>();
+                    if (instances.Length != 1)
+                    {
+                        LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to get Real Time instance.");
+                        return;
+                    }
+
+                    // check the core value
+                    object coreValue = fieldCore.GetValue(instances[0]);
+                    if (coreValue == null)
+                    {
+                        // the core value is null, which means that the RealTime mod is not yet initialized
+                        // when the mod does eventually initialize, it will use the patched date format
+                        // just log an info message
+                        LogUtil.LogInfo("Date not refreshed for RealTime mod because the mod is not yet initialized.");
+                    }
+                    else
+                    {
+                        // core value is not null, which means the RealTime mod is initialized
+                        // but the attached DateTooltipBehavior could not be found
+                        // this is a real error
+                        LogUtil.LogError("Error refreshing date for RealTime mod.  Unable to get DateTooltipBehavior component.");
+                    }
+
+                    // in either case, the method cannot be invoked without the DateTooltipBehavior component
+                    return;
+                }
+
+                // invoke the patched method on the DateTooltipBehavior component, forcing an update of the tool tip
+                originalMethod.Invoke(spriteDateTooltipBehavior, new object[] { true });
+                LogUtil.LogInfo("Refreshed date for RealTime mod.");
+            }
+            catch (Exception ex)
+            {
+                LogUtil.LogException(ex);
+            }
         }
 
         /// <summary>
@@ -339,11 +578,12 @@ namespace DateFormat
                 {
                     new Harmony(HarmonyId).UnpatchAll(HarmonyId);
                     Patched = false;
+                    LogUtil.LogInfo("All patches removed.");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                LogUtil.LogException(ex);
             }
         }
 
@@ -361,27 +601,23 @@ namespace DateFormat
         }
 
         /// <summary>
-        /// return whether or not the specified mod is enabled
+        /// get the specified mod; return null if not found
         /// </summary>
-        public static bool IsModEnabled(ulong modID)
+        public static PluginManager.PluginInfo GetMod(ulong modID)
         {
             // do each mod
             foreach (PluginManager.PluginInfo mod in PluginManager.instance.GetPluginsInfo())
             {
-                // ignore builtin mods and camera script
-                if (!mod.isBuiltin && !mod.isCameraScript)
+                // check if this is the specified mod
+                if (mod.publishedFileID.AsUInt64 == modID)
                 {
-                    // check if this is the specified mod
-                    if (mod.publishedFileID.AsUInt64 == modID)
-                    {
-                        // found the mod, return enabled status
-                        return mod.isEnabled;
-                    }
+                    // found the mod, return it
+                    return mod;
                 }
             }
 
-            // not found, so not enabled
-            return false;
+            // not found; possibly because the mod is simply not subscribed
+            return null;
         }
     }
 }

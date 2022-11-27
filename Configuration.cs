@@ -3,6 +3,7 @@ using System.Linq;
 using System.IO;
 using System.Xml.Serialization;
 using UnityEngine;
+using DateFormat;
 
 /// <summary>
 /// Handle loading and saving a global configuration file for a mod
@@ -47,7 +48,7 @@ public abstract class Configuration<C> where C : class, new()
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                LogUtil.LogException(ex);
                 instance = new C();
             }
         }
@@ -64,7 +65,7 @@ public abstract class Configuration<C> where C : class, new()
         // the config must have been loaded prior to attempting to save
         if (instance == null)
         {
-            Debug.LogError("Attempt to save configuration for " + typeof(C).Name + " before an instance was loaded.");
+            LogUtil.LogError("Attempt to save configuration for " + typeof(C).Name + " before an instance was loaded.");
             return;
         }
 
@@ -82,7 +83,7 @@ public abstract class Configuration<C> where C : class, new()
         }
         catch (Exception ex)
         {
-            Debug.LogException(ex);
+            LogUtil.LogException(ex);
         }
     }
 
@@ -103,7 +104,7 @@ public abstract class Configuration<C> where C : class, new()
         else
         {
             // log an error and return a defaultl file name
-            Debug.LogError("ConfigurationFile attribute missing in " + typeof(C).Name);
+            LogUtil.LogError("ConfigurationFile attribute missing in " + typeof(C).Name);
             return typeof(C).Name + "Config.xml";
         }
     }

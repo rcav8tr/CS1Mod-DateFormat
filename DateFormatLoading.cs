@@ -1,5 +1,4 @@
 ﻿using ICities;
-using UnityEngine;
 using System;
 
 namespace DateFormat
@@ -27,7 +26,8 @@ namespace DateFormat
                     mode == LoadMode.LoadTheme           )
                 {
                     // if Date Reformatter mod is enabled, display message and return
-                    if (HarmonyPatcher.IsModEnabled(565071445L))
+                    ColossalFramework.Plugins.PluginManager.PluginInfo mod = HarmonyPatcher.GetMod(565071445UL);
+                    if (mod != null && mod.isEnabled)
                     {
                         // create dialog panel
                         ExceptionPanel panel = ColossalFramework.UI.UIView.library.ShowModal<ExceptionPanel>("ExceptionPanel");
@@ -42,12 +42,12 @@ namespace DateFormat
                     }
 
                     // create the Harmony patches
-                    if (!HarmonyPatcher.CreatePatches()) return;
+                    HarmonyPatcher.CreatePatches();
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                LogUtil.LogException(ex);
             }
         }
 
@@ -71,7 +71,7 @@ namespace DateFormat
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                LogUtil.LogException(ex);
             }
         }
     }

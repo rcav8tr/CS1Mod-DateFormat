@@ -20,7 +20,7 @@ namespace DateFormat
             // check Harmony
             HarmonyHelper.EnsureHarmonyInstalled();
         }
-        
+
         public void OnSettingsUI(UIHelperBase helper)
         {
             // get the date format from the config file
@@ -137,7 +137,7 @@ namespace DateFormat
             });
             resetToDefault.textScale = 1f;
         }
-        
+
         /// <summary>
         /// update things when the date format is changed
         /// </summary>
@@ -159,7 +159,7 @@ namespace DateFormat
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                LogUtil.LogException(ex);
             }
         }
     }

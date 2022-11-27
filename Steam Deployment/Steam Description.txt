@@ -27,7 +27,8 @@ This mod does not format the date/time displayed when loading or saving:  games,
 This mod is compatible with the following mods.  The main game date will be formatted when any of these mods are enabled.[list]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=781767563]Extended InfoPanel[/url]
 [*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2498761388]Extended InfoPanel 2[/url]
-[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2274354659L]Extended InfoPanel 21:9[/url][/list]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2274354659]Extended InfoPanel 21:9[/url]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=1420955187]Real Time[/url][/list]
 
 This mod is compatible with the [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2368396560]Enhanced Outside Connections View[/url] mod.  The tooltip date on the graph will be formatted.
 
