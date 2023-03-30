@@ -14,12 +14,13 @@ Click Reset To Default to reset all settings to their default values.  The defau
 
 The date format can be changed while a game is in progress.  The new date format will be applied immediately.
 
-The following dates are formatted:[list]
-[*]Game, Map Editor, Theme Editor - main game date
-[*]ChirpX Launch Site - past launch dates
-[*]Festival Area - concert dates
-[*]Football Stadium - next and past match dates
-[*]Varsity Sports Arenas - next and past match dates[/list]
+The following dates are formatted:
+[table]
+[tr][td][b]Date[/b][/td][td][b]Displayed by[/b][/td][/tr]
+[tr][td]Main game date[/td][td]Game, Map Editor, Theme Editor[/td][/tr]
+[tr][td]Past launch dates[/td][td]ChirpX Launch Site[/td][/tr]
+[tr][td]Next and past match dates[/td][td]Football Stadium, Varsity Sports Arenas, Sports Venues (CCP)[/td][/tr]
+[/table]
 
 This mod does not format the date/time displayed when loading or saving:  games, maps, themes, assets, and scenarios.
 
