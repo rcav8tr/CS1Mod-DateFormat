@@ -1,6 +1,6 @@
 Specify the format for dates in the game.
 
-[img=https://i.imgur.com/a0VrMRr.png]
+[img=https://i.imgur.com/0O9w9Ta.png]
 
 [h1]Detailed Description[/h1]
 The following date formatting items can be specified:[list]
